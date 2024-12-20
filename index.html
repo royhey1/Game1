@@ -20,8 +20,6 @@
     let endPoint = null;
     let startTime = 0;
     let stageTime = 60 * 1000; // 60秒
-    let totalTime = 60 * 1000; // 総時間
-    let currentStage = 0;
     let score = 0;
     let obstacles = [];
     let gameStarted = false; // ゲームが開始されているか
@@ -31,7 +29,6 @@
       background(220); // 初期化時に背景を描画
       createStartButton(); // ゲーム開始ボタンを作成
       noLoop(); // 初期状態で描画を停止
-      setupStage(); // ゲーム開始前にステージを初期化
     }
 
     function draw() {
@@ -54,8 +51,6 @@
 
         // Goalの文字を表示
         text('Goal', endPoint.x, endPoint.y - 15);
-      } else {
-        console.log('Error: startPoint or endPoint is null');
       }
 
       // 障害物の描画
@@ -84,13 +79,11 @@
       textSize(20);
       textAlign(LEFT);
       text(`Time: ${(remainingTime / 1000).toFixed(1)}`, 10, 30);
-      text(`Stage: ${currentStage + 1}`, 10, 50);
+      text(`Stage: 1`, 10, 50); // ステージは常に1
       text(`Score: ${score.toFixed(1)}`, 10, 70);
 
       if (remainingTime <= 0) {
-        drawing = false;
-        alert('Time up!');
-        setupStage();
+        gameOver(); // 時間切れ時の処理
       }
     }
 
@@ -122,8 +115,7 @@
       points = [];
       startPoint = createVector(random(50, 350), random(50, 350));
       endPoint = createVector(random(50, 350), random(50, 350));
-      obstacles = generateObstacles(currentStage);
-      currentStage++;
+      obstacles = generateObstacles(1); // ステージは常に1
       startTime = millis();
 
       console.log('setupStage called');
@@ -132,7 +124,7 @@
     }
 
     function generateObstacles(stage) {
-      let numObstacles = stage;
+      let numObstacles = stage; // ステージ1の障害物数
       let obs = [];
       for (let i = 0; i < numObstacles; i++) {
         let x = random(50, 350);
@@ -154,13 +146,11 @@
       score += scoreForStage;
     }
 
-    function checkCollision(x, y) {
-      for (let obs of obstacles) {
-        if (x > obs.x && x < obs.x + obs.w && y > obs.y && y < obs.y + obs.h) {
-          return true;
-        }
-      }
-      return false;
+    function gameOver() {
+      gameStarted = false;
+      alert('Time up! Returning to the start screen.');
+      createStartButton(); // ゲームをリセット
+      noLoop(); // 描画を停止
     }
 
     function createStartButton() {
