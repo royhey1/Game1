@@ -1,0 +1,40 @@
+function setupStage() {
+      if (totalTime <= 0) {
+        alert('Game Over! Stages cleared: ' + currentStage + '\nTotal Score: ' + score.toFixed(1));
+        noLoop();
+        return;
+      }
+
+      // ランダムなスタートとゴールの座標を設定
+      startPoint = createVector(random(50, 350), random(50, 350));
+      endPoint = createVector(random(50, 350), random(50, 350));
+      
+      // 障害物を生成
+      obstacles = generateObstacles(currentStage);
+      
+      currentStage++;
+      startTime = millis();
+    }
+
+    function generateObstacles(stage) {
+      let numObstacles = stage; // ステージ数に応じて障害物の数を増やす
+      let obs = [];
+      for (let i = 0; i < numObstacles; i++) {
+        let x = random(50, 350);
+        let y = random(50, 350);
+        let w = random(30, 100);
+        let h = random(30, 100);
+        obs.push({ x, y, w, h });
+      }
+      return obs;
+    }
+
+    function calculateScore() {
+      let lineLength = 0;
+      for (let i = 1; i < points.length; i++) {
+        lineLength += dist(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+      }
+      let shortestDistance = dist(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+      let scoreForStage = Math.max(0, 100 - (lineLength / shortestDistance) * 100);
+      score += scoreForStage;
+    }
