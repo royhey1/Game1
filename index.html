@@ -4,15 +4,14 @@
   <meta charset="UTF-8">
   <title>Line Drawing Game</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden; /* スクロールを防ぐ */
+      touch-action: none; /* タッチイベントの干渉を防ぐ */
+    }
+  </style>
   <script>
-   
-    <style>
-  body {
-    margin: 0;
-    overflow: hidden; /* スクロールを防ぐ */
-    touch-action: none; /* タッチイベントの干渉を防ぐ */
-  }
-</style>
     let drawing = false;
     let points = [];
     let startPoint, endPoint;
@@ -27,14 +26,14 @@
 
     function setup() {
       createCanvas(400, 400);
-      background(220);
+      background(220); // 初期化時に背景を描画
       createStartButton();
+      noLoop(); // 初期状態で描画を停止
     }
 
     function draw() {
-      if (!gameStarted) return; // ゲームが開始されていない場合は描画しない
-
-      background(220);
+      if (!gameStarted) return; // ゲーム開始後のみ描画
+      background(220); // 背景のリセット
       fill(0, 255, 0);
       ellipse(startPoint.x, startPoint.y, 20, 20);
       fill(255, 0, 0);
@@ -80,20 +79,34 @@
     }
 
     function mousePressed() {
-      if (!gameStarted) return;
+      handleInputStart(mouseX, mouseY);
+    }
 
-      if (dist(mouseX, mouseY, startPoint.x, startPoint.y) < 20) {
+    function mouseReleased() {
+      handleInputEnd(mouseX, mouseY);
+    }
+
+    function touchStarted() {
+      handleInputStart(touchX, touchY);
+      return false; // デフォルトのスクロール動作を防ぐ
+    }
+
+    function touchEnded() {
+      handleInputEnd(touchX, touchY);
+      return false; // デフォルトのスクロール動作を防ぐ
+    }
+
+    function handleInputStart(x, y) {
+      if (dist(x, y, startPoint.x, startPoint.y) < 20) {
         drawing = true;
         points = [];
         startTime = millis();
       }
     }
 
-    function mouseReleased() {
-      if (!gameStarted) return;
-
+    function handleInputEnd(x, y) {
       if (drawing) {
-        if (dist(mouseX, mouseY, endPoint.x, endPoint.y) < 20) {
+        if (dist(x, y, endPoint.x, endPoint.y) < 20) {
           calculateScore();
           alert('Stage Cleared! Score: ' + score.toFixed(1));
           setupStage();
@@ -117,7 +130,7 @@
     }
 
     function generateObstacles(stage) {
-      let numObstacles = stage; // ステージ数に応じて障害物の数を増やす
+      let numObstacles = stage;
       let obs = [];
       for (let i = 0; i < numObstacles; i++) {
         let x = random(50, 350);
@@ -155,6 +168,7 @@
         gameStarted = true;
         button.remove();
         setupStage();
+        loop();
       });
     }
   </script>
