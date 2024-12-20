@@ -19,13 +19,14 @@
     let startPoint = null;
     let endPoint = null;
     let startTime = 0;
-    let stageTime = 60 * 1000; // 60秒
+    let totalTime = 60 * 1000; // 60秒の総時間
     let score = 0;
     let obstacles = [];
     let gameStarted = false; // ゲームが開始されているか
+    let currentStage = 1; // 現在のステージ番号
 
     function setup() {
-      createCanvas(400, 400);
+      createCanvas(windowWidth, windowHeight); // スマートフォン画面のサイズ
       background(220); // 初期化時に背景を描画
       createStartButton(); // ゲーム開始ボタンを作成
       noLoop(); // 初期状態で描画を停止
@@ -73,17 +74,18 @@
 
       // 残り時間を計算
       let elapsedTime = millis() - startTime;
-      let remainingTime = stageTime - elapsedTime;
+      let remainingTime = Math.max(0, totalTime - elapsedTime);
 
       fill(0);
       textSize(20);
       textAlign(LEFT);
       text(`Time: ${(remainingTime / 1000).toFixed(1)}`, 10, 30);
-      text(`Stage: 1`, 10, 50); // ステージは常に1
+      text(`Stage: ${currentStage}`, 10, 50);
       text(`Score: ${score.toFixed(1)}`, 10, 70);
 
+      // 時間切れならゲームオーバー
       if (remainingTime <= 0) {
-        gameOver(); // 時間切れ時の処理
+        gameOver();
       }
     }
 
@@ -104,8 +106,9 @@
       if (drawing) {
         if (endPoint && dist(mouseX, mouseY, endPoint.x, endPoint.y) < 20) {
           calculateScore();
-          alert('Stage Cleared! Score: ' + score.toFixed(1));
-          setupStage();
+          alert(`Stage ${currentStage} Cleared! Score: ${score.toFixed(1)}`);
+          currentStage++; // ステージを進める
+          setupStage(); // 次のステージを設定
         }
         drawing = false;
       }
@@ -115,12 +118,8 @@
       points = [];
       startPoint = generateSafePoint();
       endPoint = generateSafePoint();
-      obstacles = generateObstacles(1); // ステージは常に1
-      startTime = millis();
-
-      console.log('setupStage called');
-      console.log('Start Point:', startPoint);
-      console.log('End Point:', endPoint);
+      obstacles = generateObstacles(currentStage); // 現在のステージ番号に応じた障害物数
+      console.log(`Stage ${currentStage} setup completed`);
     }
 
     function generateSafePoint() {
@@ -128,7 +127,7 @@
       let isSafe = false;
 
       while (!isSafe) {
-        point = createVector(random(50, 350), random(50, 350));
+        point = createVector(random(50, windowWidth - 50), random(50, windowHeight - 50));
         isSafe = obstacles.every(obs => !checkOverlap(point.x, point.y, obs));
       }
 
@@ -136,17 +135,18 @@
     }
 
     function generateObstacles(stage) {
-      let numObstacles = stage; // ステージ1の障害物数
+      let numObstacles = Math.min(5, stage); // ステージごとに障害物を最大5個まで増加
       let obs = [];
       for (let i = 0; i < numObstacles; i++) {
         let isSafe = false;
         let x, y, w, h;
 
         while (!isSafe) {
-          x = random(50, 300);
-          y = random(50, 300);
-          w = random(30, 100);
-          h = random(30, 100);
+          // スタートとエンドの中間で障害物を生成
+          x = random(Math.min(startPoint.x, endPoint.x), Math.max(startPoint.x, endPoint.x));
+          y = random(Math.min(startPoint.y, endPoint.y), Math.max(startPoint.y, endPoint.y));
+          w = random(18, 60); // 障害物の幅（60%に縮小）
+          h = random(18, 60); // 障害物の高さ（60%に縮小）
 
           let obstacle = { x, y, w, h };
           isSafe =
@@ -178,7 +178,7 @@
 
     function gameOver() {
       gameStarted = false;
-      alert('Time up! Returning to the start screen.');
+      alert(`Time's up! Total Score: ${score.toFixed(1)}`);
       createStartButton(); // ゲームをリセット
       noLoop(); // 描画を停止
     }
@@ -189,6 +189,9 @@
       button.mousePressed(() => {
         gameStarted = true;
         button.remove();
+        startTime = millis(); // ゲーム開始時刻を設定
+        currentStage = 1; // ステージをリセット
+        score = 0; // スコアをリセット
         setupStage();
         loop();
       });
