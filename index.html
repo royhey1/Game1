@@ -111,6 +111,15 @@
         let point = { x: mouseX, y: mouseY };
         points.push(point);
 
+        // エンドポイントに到達したら描画を停止しスコアを計算
+        if (endPoint && dist(point.x, point.y, endPoint.x, endPoint.y) < 20) {
+          drawing = false; // 描画を停止
+          calculateScore();
+          alert(`Stage ${currentStage} Cleared! Score: ${score.toFixed(1)}`);
+          currentStage++; // ステージを進める
+          setupStage(); // 次のステージを設定
+        }
+
         // 障害物との接触を確認
         for (let obs of obstacles) {
           if (checkOverlap(point.x, point.y, obs)) {
@@ -122,18 +131,6 @@
             return;
           }
         }
-      }
-    }
-
-    function mouseReleased() {
-      if (drawing) {
-        if (endPoint && dist(mouseX, mouseY, endPoint.x, endPoint.y) < 20) {
-          calculateScore();
-          alert(`Stage ${currentStage} Cleared! Score: ${score.toFixed(1)}`);
-          currentStage++; // ステージを進める
-          setupStage(); // 次のステージを設定
-        }
-        drawing = false;
       }
     }
 
@@ -165,8 +162,8 @@
       let t = random(0.3, 0.7); // スタートとエンドの間の位置 (30%～70%)
       let x = lerp(startPoint.x, endPoint.x, t); // 線形補間でx座標を計算
       let y = lerp(startPoint.y, endPoint.y, t); // 線形補間でy座標を計算
-      let w = random(18, 60); // 障害物の幅（60%に縮小）
-      let h = random(18, 60); // 障害物の高さ（60%に縮小）
+      let w = random(18, 60); // 障害物の幅
+      let h = random(18, 60); // 障害物の高さ
       obs.push({ x: x - w / 2, y: y - h / 2, w, h }); // 障害物を中央に配置
 
       // その他の障害物をランダムに配置
@@ -209,7 +206,8 @@
       // 最短距離と正確性スコア
       let shortestDistance = dist(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
       let deviationRatio = Math.abs(lineLength - shortestDistance) / shortestDistance;
-      let accuracyScore = Math.max(0, 1000 - deviationRatio * 1000); // 最大1000点
+      let accuracyScore = 1000 - deviationRatio * 800; // 最大1000点
+      accuracyScore = Math.max(200, accuracyScore); // 最低200点に設定
 
       // 総スコア
       score += accuracyScore;
