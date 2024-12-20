@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Line Drawing Game</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+  <script>
+    let drawing = false;
+    let points = [];
+    let startPoint, endPoint;
+    let startTime;
+    let stageTime = 60 * 1000; // 60秒
+    let totalTime = 60 * 1000; // 総時間
+    let stages = [];
+    let currentStage = 0;
+    let score = 0;
+    let obstacles = [];
+    let gameStarted = false; // ゲームが開始されているか
+
+    function setup() {
+      createCanvas(400, 400);
+      background(220);
+      createStartButton();
+    }
+
+    function draw() {
+      if (!gameStarted) return; // ゲームが開始されていない場合は描画しない
+
+      background(220);
+      fill(0, 255, 0);
+      ellipse(startPoint.x, startPoint.y, 20, 20);
+      fill(255, 0, 0);
+      ellipse(endPoint.x, endPoint.y, 20, 20);
+
+      fill(100);
+      for (let obs of obstacles) {
+        rect(obs.x, obs.y, obs.w, obs.h);
+      }
+
+      if (drawing) {
+        let point = {x: mouseX, mouseY};
+        points.push(point);
+        noFill();
+        stroke(0);
+        strokeWeight(2);
+        beginShape();
+        for (let p of points) {
+          vertex(p.x, p.y);
+          if (checkCollision(p.x, p.y)) {
+            drawing = false;
+            alert('Hit an obstacle! Try again.');
+            setupStage();
+            return;
+          }
+        }
+        endShape();
+      }
+
+      let elapsedTime = millis() - startTime;
+      let remainingTime = stageTime - elapsedTime;
+      fill(0);
+      textSize(20);
+      text('Time: ' + (remainingTime / 1000).toFixed(1), 10, 30);
+      text('Stage: ' + (currentStage + 1), 10, 50);
+      text('Score: ' + score.toFixed(1), 10, 70);
+
+      if (remainingTime <= 0) {
+        drawing = false;
+        alert('Time up!');
+        setupStage();
+      }
+    }
+
+    function mousePressed() {
+      if (!gameStarted) return;
+
+      if (dist(mouseX, mouseY, startPoint.x, startPoint.y) < 20) {
+        drawing = true;
+        points = [];
+        startTime = millis();
+      }
+    }
+
+    function mouseReleased() {
+      if (!gameStarted) return;
+
+      if (drawing) {
+        if (dist(mouseX, mouseY, endPoint.x, endPoint.y) < 20) {
+          calculateScore();
+          alert('Stage Cleared! Score: ' + score.toFixed(1));
+          setupStage();
+        }
+        drawing = false;
+      }
+    }
+
+    function setupStage() {
+      if (totalTime <= 0) {
+        alert('Game Over! Stages cleared: ' + currentStage + '\nTotal Score: ' + score.toFixed(1));
+        noLoop();
+        return;
+      }
+
+      startPoint = createVector(random(50, 350), random(50, 350));
+      endPoint = createVector(random(50, 350), random(50, 350));
+      obstacles = generateObstacles(currentStage);
+      currentStage++;
+      startTime = millis();
+    }
+
+    function generateObstacles(stage) {
+      let numObstacles = stage; // ステージ数に応じて障害物の数を増やす
+      let obs = [];
+      for (let i = 0; i < numObstacles; i++) {
+        let x = random(50, 350);
+        let y = random(50, 350);
+        let w = random(30, 100);
+        let h = random(30, 100);
+        obs.push({ x, y, w, h });
+      }
+      return obs;
+    }
+
+    function calculateScore() {
+      let lineLength = 0;
+      for (let i = 1; i < points.length; i++) {
+        lineLength += dist(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+      }
+      let shortestDistance = dist(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+      let scoreForStage = Math.max(0, 100 - (lineLength / shortestDistance) * 100);
+      score += scoreForStage;
+    }
+
+    function checkCollision(x, y) {
+      for (let obs of obstacles) {
+        if (x > obs.x && x < obs.x + obs.w && y > obs.y && y < obs.y + obs.h) {
+          return true;
+        }
