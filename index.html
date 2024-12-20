@@ -14,8 +14,8 @@
 </head>
 <body>
   <script>
-    let drawing = false;
-    let points = [];
+    let drawing = false; // 描画中かどうか
+    let points = []; // 描画するポイント
     let startPoint = null;
     let endPoint = null;
     let startTime = 0;
@@ -50,10 +50,10 @@
         fill(0);
         textSize(16);
         textAlign(CENTER, CENTER);
-        text('Start', startPoint.x, startPoint.y - 15); // スタート地点の上に表示
+        text('Start', startPoint.x, startPoint.y - 15);
 
         // Goalの文字を表示
-        text('Goal', endPoint.x, endPoint.y - 15); // ゴール地点の上に表示
+        text('Goal', endPoint.x, endPoint.y - 15);
       } else {
         console.log('Error: startPoint or endPoint is null');
       }
@@ -64,25 +64,19 @@
         rect(obs.x, obs.y, obs.w, obs.h);
       }
 
-      if (drawing) {
-        let point = {x: mouseX, y: mouseY};
-        points.push(point);
+      // 描画中のラインを描画
+      if (points.length > 0) {
         noFill();
         stroke(0);
         strokeWeight(2);
         beginShape();
         for (let p of points) {
           vertex(p.x, p.y);
-          if (checkCollision(p.x, p.y)) {
-            drawing = false;
-            alert('Hit an obstacle! Try again.');
-            setupStage();
-            return;
-          }
         }
         endShape();
       }
 
+      // 残り時間を計算
       let elapsedTime = millis() - startTime;
       let remainingTime = stageTime - elapsedTime;
 
@@ -101,34 +95,21 @@
     }
 
     function mousePressed() {
-      handleInputStart(mouseX, mouseY);
-    }
-
-    function mouseReleased() {
-      handleInputEnd(mouseX, mouseY);
-    }
-
-    function touchStarted() {
-      handleInputStart(touchX, touchY);
-      return false; // デフォルトのスクロール動作を防ぐ
-    }
-
-    function touchEnded() {
-      handleInputEnd(touchX, touchY);
-      return false; // デフォルトのスクロール動作を防ぐ
-    }
-
-    function handleInputStart(x, y) {
-      if (startPoint && dist(x, y, startPoint.x, startPoint.y) < 20) {
+      if (startPoint && dist(mouseX, mouseY, startPoint.x, startPoint.y) < 20) {
         drawing = true;
-        points = [];
-        startTime = millis();
+        points = [{ x: mouseX, y: mouseY }]; // 新しいラインを開始
       }
     }
 
-    function handleInputEnd(x, y) {
+    function mouseDragged() {
       if (drawing) {
-        if (endPoint && dist(x, y, endPoint.x, endPoint.y) < 20) {
+        points.push({ x: mouseX, y: mouseY }); // 現在の位置を追加
+      }
+    }
+
+    function mouseReleased() {
+      if (drawing) {
+        if (endPoint && dist(mouseX, mouseY, endPoint.x, endPoint.y) < 20) {
           calculateScore();
           alert('Stage Cleared! Score: ' + score.toFixed(1));
           setupStage();
