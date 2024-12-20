@@ -18,6 +18,8 @@
     let points = [];
     let startPoint = null;
     let endPoint = null;
+    let startRadius = 30; // スタート地点の半径 (1.5倍の大きさ)
+    let endRadius = 30;   // エンド地点の半径 (1.5倍の大きさ)
     let startTime = 0;
     let totalTime = 60 * 1000; // 60秒の総時間
     let score = 0;
@@ -42,18 +44,18 @@
       // スタート地点とゴール地点を描画
       if (startPoint && endPoint) {
         fill(0, 255, 0);
-        ellipse(startPoint.x, startPoint.y, 20, 20); // スタート地点
+        ellipse(startPoint.x, startPoint.y, startRadius * 2, startRadius * 2); // スタート地点
         fill(255, 0, 0);
-        ellipse(endPoint.x, endPoint.y, 20, 20); // ゴール地点
+        ellipse(endPoint.x, endPoint.y, endRadius * 2, endRadius * 2); // ゴール地点
 
         // Startの文字を表示
         fill(0);
         textSize(16);
         textAlign(CENTER, CENTER);
-        text('Start', startPoint.x, startPoint.y - 15);
+        text('Start', startPoint.x, startPoint.y - startRadius - 10);
 
         // Goalの文字を表示
-        text('Goal', endPoint.x, endPoint.y - 15);
+        text('Goal', endPoint.x, endPoint.y - endRadius - 10);
       }
 
       // 障害物の描画
@@ -100,9 +102,17 @@
     }
 
     function mousePressed() {
-      if (startPoint && dist(mouseX, mouseY, startPoint.x, startPoint.y) < 20) {
+      // スタート地点範囲内をタップした場合
+      if (startPoint && dist(mouseX, mouseY, startPoint.x, startPoint.y) < startRadius) {
         drawing = true;
-        points = [{ x: mouseX, y: mouseY }]; // 新しいラインを開始
+
+        // スタート地点枠上のエンド地点に最も近いポイントを計算
+        let angleToEnd = atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
+        let startEdgeX = startPoint.x + startRadius * cos(angleToEnd);
+        let startEdgeY = startPoint.y + startRadius * sin(angleToEnd);
+
+        // 最初のポイントを枠上の地点に設定
+        points = [{ x: startEdgeX, y: startEdgeY }];
       }
     }
 
@@ -112,7 +122,7 @@
         points.push(point);
 
         // エンドポイントに到達したら描画を停止しスコアを計算
-        if (endPoint && dist(point.x, point.y, endPoint.x, endPoint.y) < 20) {
+        if (endPoint && dist(point.x, point.y, endPoint.x, endPoint.y) < endRadius) {
           drawing = false; // 描画を停止
           calculateScore();
           alert(`Stage ${currentStage} Cleared! Score: ${score.toFixed(1)}`);
