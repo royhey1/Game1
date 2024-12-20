@@ -14,8 +14,8 @@
 </head>
 <body>
   <script>
-    let drawing = false; // 描画中かどうか
-    let points = []; // 描画するポイント
+    let drawing = false;
+    let points = [];
     let startPoint = null;
     let endPoint = null;
     let startTime = 0;
@@ -113,8 +113,8 @@
 
     function setupStage() {
       points = [];
-      startPoint = createVector(random(50, 350), random(50, 350));
-      endPoint = createVector(random(50, 350), random(50, 350));
+      startPoint = generateSafePoint();
+      endPoint = generateSafePoint();
       obstacles = generateObstacles(1); // ステージは常に1
       startTime = millis();
 
@@ -123,17 +123,47 @@
       console.log('End Point:', endPoint);
     }
 
+    function generateSafePoint() {
+      let point;
+      let isSafe = false;
+
+      while (!isSafe) {
+        point = createVector(random(50, 350), random(50, 350));
+        isSafe = obstacles.every(obs => !checkOverlap(point.x, point.y, obs));
+      }
+
+      return point;
+    }
+
     function generateObstacles(stage) {
       let numObstacles = stage; // ステージ1の障害物数
       let obs = [];
       for (let i = 0; i < numObstacles; i++) {
-        let x = random(50, 350);
-        let y = random(50, 350);
-        let w = random(30, 100);
-        let h = random(30, 100);
-        obs.push({ x, y, w, h });
+        let isSafe = false;
+        let x, y, w, h;
+
+        while (!isSafe) {
+          x = random(50, 300);
+          y = random(50, 300);
+          w = random(30, 100);
+          h = random(30, 100);
+
+          let obstacle = { x, y, w, h };
+          isSafe =
+            !checkOverlap(startPoint.x, startPoint.y, obstacle) &&
+            !checkOverlap(endPoint.x, endPoint.y, obstacle);
+
+          if (isSafe) {
+            obs.push(obstacle);
+          }
+        }
       }
       return obs;
+    }
+
+    function checkOverlap(x, y, obs) {
+      // 矩形と点の衝突判定
+      return x > obs.x && x < obs.x + obs.w && y > obs.y && y < obs.y + obs.h;
     }
 
     function calculateScore() {
