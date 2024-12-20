@@ -24,6 +24,8 @@
     let obstacles = [];
     let gameStarted = false; // ゲームが開始されているか
     let currentStage = 1; // 現在のステージ番号
+    let showError = false; // ❌を表示するかどうか
+    let errorTime = 0; // ❌の表示開始時間
 
     function setup() {
       createCanvas(windowWidth, windowHeight); // スマートフォン画面のサイズ
@@ -72,6 +74,14 @@
         endShape();
       }
 
+      // 障害物に当たった場合の❌表示
+      if (showError && millis() - errorTime < 500) {
+        fill(255, 0, 0);
+        textSize(64);
+        textAlign(CENTER, CENTER);
+        text('❌', width / 2, height / 2);
+      }
+
       // 残り時間を計算
       let elapsedTime = millis() - startTime;
       let remainingTime = Math.max(0, totalTime - elapsedTime);
@@ -98,7 +108,20 @@
 
     function mouseDragged() {
       if (drawing) {
-        points.push({ x: mouseX, y: mouseY }); // 現在の位置を追加
+        let point = { x: mouseX, y: mouseY };
+        points.push(point);
+
+        // 障害物との接触を確認
+        for (let obs of obstacles) {
+          if (checkOverlap(point.x, point.y, obs)) {
+            drawing = false; // 描画を停止
+            points = []; // ラインをリセット
+            showError = true; // ❌を表示
+            errorTime = millis(); // ❌の表示開始時間
+            setTimeout(() => (showError = false), 500); // 0.5秒後に❌を非表示
+            return;
+          }
+        }
       }
     }
 
@@ -142,11 +165,10 @@
         let x, y, w, h;
 
         while (!isSafe) {
-          // スタートとエンドの中間で障害物を生成
-          x = random(Math.min(startPoint.x, endPoint.x), Math.max(startPoint.x, endPoint.x));
-          y = random(Math.min(startPoint.y, endPoint.y), Math.max(startPoint.y, endPoint.y));
-          w = random(18, 60); // 障害物の幅（60%に縮小）
-          h = random(18, 60); // 障害物の高さ（60%に縮小）
+          x = random(50, windowWidth - 100);
+          y = random(50, windowHeight - 100);
+          w = random(18, 60); // 障害物の幅
+          h = random(18, 60); // 障害物の高さ
 
           let obstacle = { x, y, w, h };
           isSafe =
@@ -168,12 +190,30 @@
 
     function calculateScore() {
       let lineLength = 0;
+      let totalDeviation = 0;
+      let pointsChecked = 10; // サンプリング数
+
+      // 線の長さと正確性を評価
       for (let i = 1; i < points.length; i++) {
         lineLength += dist(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+
+        // サンプリングして直線からのズレを計算
+        if (i % Math.floor(points.length / pointsChecked) === 0) {
+          let idealX = lerp(startPoint.x, endPoint.x, i / points.length);
+          let idealY = lerp(startPoint.y, endPoint.y, i / points.length);
+          let deviation = dist(points[i].x, points[i].y, idealX, idealY);
+          totalDeviation += deviation;
+        }
       }
+
+      // 最短距離とペナルティ
       let shortestDistance = dist(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-      let scoreForStage = Math.max(0, 100 - (lineLength / shortestDistance) * 100);
-      score += scoreForStage;
+      let distancePenalty = Math.max(0, (lineLength - shortestDistance) * 0.5); // 距離超過ペナルティ
+      let accuracyScore = Math.max(0, 100 - (totalDeviation / pointsChecked) * 10); // 正確性スコア
+
+      // 総スコア
+      let totalScore = accuracyScore - distancePenalty;
+      score += Math.max(0, totalScore); // スコアを加算
     }
 
     function gameOver() {
