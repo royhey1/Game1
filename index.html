@@ -160,13 +160,22 @@
     function generateObstacles(stage) {
       let numObstacles = Math.min(5, stage); // ステージごとに障害物を最大5個まで増加
       let obs = [];
-      for (let i = 0; i < numObstacles; i++) {
+
+      // 必ず1つの障害物をスタートとエンドの直線上に配置
+      let t = random(0.3, 0.7); // スタートとエンドの間の位置 (30%～70%)
+      let x = lerp(startPoint.x, endPoint.x, t); // 線形補間でx座標を計算
+      let y = lerp(startPoint.y, endPoint.y, t); // 線形補間でy座標を計算
+      let w = random(18, 60); // 障害物の幅（60%に縮小）
+      let h = random(18, 60); // 障害物の高さ（60%に縮小）
+      obs.push({ x: x - w / 2, y: y - h / 2, w, h }); // 障害物を中央に配置
+
+      // その他の障害物をランダムに配置
+      for (let i = 1; i < numObstacles; i++) {
         let isSafe = false;
-        let x, y, w, h;
 
         while (!isSafe) {
-          x = random(50, windowWidth - 100);
-          y = random(50, windowHeight - 100);
+          x = random(Math.min(startPoint.x, endPoint.x), Math.max(startPoint.x, endPoint.x));
+          y = random(Math.min(startPoint.y, endPoint.y), Math.max(startPoint.y, endPoint.y));
           w = random(18, 60); // 障害物の幅
           h = random(18, 60); // 障害物の高さ
 
@@ -180,6 +189,7 @@
           }
         }
       }
+
       return obs;
     }
 
@@ -190,30 +200,19 @@
 
     function calculateScore() {
       let lineLength = 0;
-      let totalDeviation = 0;
-      let pointsChecked = 10; // サンプリング数
 
-      // 線の長さと正確性を評価
+      // 線の長さを計算
       for (let i = 1; i < points.length; i++) {
         lineLength += dist(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
-
-        // サンプリングして直線からのズレを計算
-        if (i % Math.floor(points.length / pointsChecked) === 0) {
-          let idealX = lerp(startPoint.x, endPoint.x, i / points.length);
-          let idealY = lerp(startPoint.y, endPoint.y, i / points.length);
-          let deviation = dist(points[i].x, points[i].y, idealX, idealY);
-          totalDeviation += deviation;
-        }
       }
 
-      // 最短距離とペナルティ
+      // 最短距離と正確性スコア
       let shortestDistance = dist(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-      let distancePenalty = Math.max(0, (lineLength - shortestDistance) * 0.5); // 距離超過ペナルティ
-      let accuracyScore = Math.max(0, 100 - (totalDeviation / pointsChecked) * 10); // 正確性スコア
+      let deviationRatio = Math.abs(lineLength - shortestDistance) / shortestDistance;
+      let accuracyScore = Math.max(0, 1000 - deviationRatio * 1000); // 最大1000点
 
       // 総スコア
-      let totalScore = accuracyScore - distancePenalty;
-      score += Math.max(0, totalScore); // スコアを加算
+      score += accuracyScore;
     }
 
     function gameOver() {
