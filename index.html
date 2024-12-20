@@ -39,15 +39,26 @@
 
       background(220);
 
+      // スタート地点とゴール地点を描画
       if (startPoint && endPoint) {
         fill(0, 255, 0);
-        ellipse(startPoint.x, startPoint.y, 20, 20);
+        ellipse(startPoint.x, startPoint.y, 20, 20); // スタート地点
         fill(255, 0, 0);
-        ellipse(endPoint.x, endPoint.y, 20, 20);
+        ellipse(endPoint.x, endPoint.y, 20, 20); // ゴール地点
+
+        // Startの文字を表示
+        fill(0);
+        textSize(16);
+        textAlign(CENTER, CENTER);
+        text('Start', startPoint.x, startPoint.y - 15); // スタート地点の上に表示
+
+        // Goalの文字を表示
+        text('Goal', endPoint.x, endPoint.y - 15); // ゴール地点の上に表示
       } else {
         console.log('Error: startPoint or endPoint is null');
       }
 
+      // 障害物の描画
       fill(100);
       for (let obs of obstacles) {
         rect(obs.x, obs.y, obs.w, obs.h);
