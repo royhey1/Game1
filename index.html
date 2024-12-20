@@ -136,3 +136,21 @@
         if (x > obs.x && x < obs.x + obs.w && y > obs.y && y < obs.y + obs.h) {
           return true;
         }
+      }
+      return false;
+    }
+
+    function createStartButton() {
+      let button = createButton('ゲームを開始する');
+      button.position(150, 200);
+      button.mousePressed(() => {
+        gameStarted = true;
+        button.remove();
+        setupStage();
+      });
+    }
+  </script>
+</head>
+<body>
+</body>
+</html>
