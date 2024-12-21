@@ -18,16 +18,20 @@
     let points = [];
     let startPoint = null;
     let endPoint = null;
-    let startRadius = 30; // スタート地点の半径 (1.5倍の大きさ)
-    let endRadius = 30;   // エンド地点の半径 (1.5倍の大きさ)
+    let startRadius = 30; // スタート地点の半径
+    let endRadius = 30;   // エンド地点の半径
     let startTime = 0;
     let totalTime = 60 * 1000; // 60秒の総時間
     let score = 0;
+    let highScore = 0; // ハイスコア
     let obstacles = [];
     let gameStarted = false; // ゲームが開始されているか
     let currentStage = 1; // 現在のステージ番号
     let showError = false; // ❌を表示するかどうか
     let errorTime = 0; // ❌の表示開始時間
+    let displayScore = false; // スコア表示フラグ
+    let displayScoreValue = 0; // 表示するスコアの値
+    let displayScoreAlpha = 255; // スコアの透明度
 
     function setup() {
       createCanvas(windowWidth, windowHeight); // スマートフォン画面のサイズ
@@ -74,6 +78,19 @@
           vertex(p.x, p.y);
         }
         endShape();
+      }
+
+      // スコアをエンド地点に表示
+      if (displayScore) {
+        fill(0, 0, 0, displayScoreAlpha);
+        textSize(32);
+        textAlign(CENTER, CENTER);
+        text(`+${displayScoreValue}`, endPoint.x, endPoint.y);
+        displayScoreAlpha -= 5; // 徐々に透明にする
+        if (displayScoreAlpha <= 0) {
+          displayScore = false;
+          displayScoreAlpha = 255; // リセット
+        }
       }
 
       // 障害物に当たった場合の❌表示
@@ -125,9 +142,12 @@
         if (endPoint && dist(point.x, point.y, endPoint.x, endPoint.y) < endRadius) {
           drawing = false; // 描画を停止
           calculateScore();
-          alert(`Stage ${currentStage} Cleared! Score: ${score.toFixed(1)}`);
-          currentStage++; // ステージを進める
-          setupStage(); // 次のステージを設定
+          displayScore = true; // スコアを表示
+          displayScoreValue = score.toFixed(1); // 表示するスコア値
+          setTimeout(() => {
+            currentStage++;
+            setupStage(); // 次のステージを開始
+          }, 1500); // 1.5秒後に次のステージ開始
         }
 
         // 障害物との接触を確認
@@ -225,14 +245,15 @@
 
     function gameOver() {
       gameStarted = false;
-      alert(`Time's up! Total Score: ${score.toFixed(1)}`);
+      highScore = Math.max(score, highScore); // ハイスコアを更新
+      alert(`Game Over! Total Score: ${score.toFixed(1)}`);
       createStartButton(); // ゲームをリセット
       noLoop(); // 描画を停止
     }
 
     function createStartButton() {
-      let button = createButton('ゲームを開始する');
-      button.position(width / 2 - 50, height / 2 - 20);
+      let button = createButton(`Start Game (High Score: ${highScore.toFixed(1)})`);
+      button.position(width / 2 - 100, height / 2 - 20);
       button.mousePressed(() => {
         gameStarted = true;
         button.remove();
